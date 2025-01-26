@@ -1,0 +1,37 @@
+CREATE EXTERNAL TABLE `xml_def`(
+  `eventdata` struct<Data:array<struct<_Name:string,_VALUE:string>>>, 
+  `system` struct<Channel:string,Computer:string,EventID:int,EventRecordID:int,Execution:struct<_ProcessID:int,_ThreadID:int>,Keywords:string,Level:int,Opcode:int,Provider:struct<_Guid:string,_Name:string>,Task:int,TimeCreated:struct<_SystemTime:string>,Version:int>, 
+  `_xmlns` string)
+PARTITIONED BY ( 
+  `year` string, 
+  `month` string, 
+  `day` string, 
+  `hour` string)
+ROW FORMAT SERDE 
+  'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+LOCATION
+  's3://bkt-test-rd123/xml_def/'
+TBLPROPERTIES (
+  'CrawlerSchemaDeserializerVersion'='1.0', 
+  'CrawlerSchemaSerializerVersion'='1.0', 
+  'UPDATED_BY_CRAWLER'='test-001', 
+  'averageRecordSize'='1184', 
+  'classification'='parquet', 
+  'compressionType'='none', 
+  'objectCount'='4', 
+  'partition_filtering.enabled'='true', 
+  'recordCount'='4', 
+  'sizeKey'='27124', 
+  'typeOfData'='file')
+
+
+  SELECT
+    MAX(CASE WHEN data._Name = 'SubjectUserSid' THEN data._VALUE END) AS SubjectUserSid,
+    MAX(CASE WHEN data._Name = 'SubjectUserName' THEN data._VALUE END) AS SubjectUserName,
+    MAX(CASE WHEN data._Name = 'IpAddress' THEN data._VALUE END) AS IpAddress
+FROM xml_def
+CROSS JOIN UNNEST(EventData.Data) AS t(data);
